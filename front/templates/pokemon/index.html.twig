@@ -1,0 +1,10 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <header class="page-header">
+        <h1>Pokédex national</h1>
+        <p class="muted">Les 1025 Pokémon des 9 générations. Recherche pilotée par un Live Component : les critères deviennent une requête HTTP <code>QUERY</code> envoyée à API Platform 5.</p>
+    </header>
+
+    <twig:PokedexSearch />
+{% endblock %}

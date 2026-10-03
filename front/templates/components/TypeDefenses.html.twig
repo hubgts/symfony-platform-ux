@@ -1,0 +1,15 @@
+{# Faiblesses et résistances, calculées à partir des multiplicateurs de dégâts de chaque type. #}
+{% props defenses %}
+{% set labels = {'4': ['×4', 'Très vulnérable'], '2': ['×2', 'Vulnérable'], '0.5': ['×½', 'Résistant'], '0.25': ['×¼', 'Très résistant'], '0': ['×0', 'Immunisé']} %}
+<dl {{ attributes.defaults({class: 'type-defenses'}) }}>
+    {% for key, types in defenses|filter(types => types is not empty) %}
+        <div class="type-defenses__row type-defenses__row--{{ key|replace({'.': '-'}) }}">
+            <dt><strong>{{ labels[key][0] }}</strong> {{ labels[key][1] }}</dt>
+            <dd>
+                {% for type in types %}
+                    <a href="{{ path('pokedex_index', {types: [type.code]}) }}" title="Voir les Pokémon {{ type.name }}"><twig:TypeBadge :type="type" /></a>
+                {% endfor %}
+            </dd>
+        </div>
+    {% endfor %}
+</dl>

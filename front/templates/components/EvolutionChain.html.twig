@@ -1,0 +1,25 @@
+{# Famille d'évolution rangée par stade, avec la condition de chaque évolution : <twig:EvolutionChain :stages="stages" :current="pokemon" /> #}
+{% props stages, current %}
+{% if stages|length > 1 or (stages|first)|length > 1 %}
+    <ol {{ attributes.defaults({class: 'evolution-chain'}) }}>
+        {% for stage in stages %}
+            <li class="evolution-chain__stage">
+                <span class="evolution-chain__label">{{ loop.first ? 'Forme de base' : 'Stade ' ~ (loop.index - 1) }}</span>
+                <ul>
+                    {% for member in stage %}
+                        <li>
+                            {% if loop.parent.loop.first %}
+                                <span class="evolution-chain__condition" aria-hidden="true"></span>
+                            {% else %}
+                                <span class="evolution-chain__condition" title="{{ member.evolutionCondition }}">{{ ux_icon('tabler:arrow-narrow-right') }} {{ member.evolutionCondition ?? 'Évolution' }}</span>
+                            {% endif %}
+                            <twig:PokemonMini :pokemon="member" :current="member.id == current.id" data-turbo-frame="pokemon-detail" />
+                        </li>
+                    {% endfor %}
+                </ul>
+            </li>
+        {% endfor %}
+    </ol>
+{% else %}
+    <p class="muted">{{ current.name }} n'évolue pas et n'est l'évolution d'aucun Pokémon.</p>
+{% endif %}

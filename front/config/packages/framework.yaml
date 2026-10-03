@@ -1,0 +1,31 @@
+framework:
+    secret: '%env(APP_SECRET)%'
+    session: true
+
+    cache:
+        pools:
+            # Réponses HTTP de l'API, mises en cache par CachingHttpClient (le pool doit gérer les tags).
+            cache.http_client:
+                adapter: cache.app
+                tags: true
+
+    # Client HTTP dédié à l'API Platform : toutes les requêtes partent du serveur (pas de CORS côté navigateur).
+    http_client:
+        scoped_clients:
+            pokedex.client:
+                base_uri: '%env(API_BASE_URL)%'
+                headers:
+                    Accept: 'application/ld+json'
+                timeout: 5
+                # Cache HTTP RFC 9111 : respecte Cache-Control/ETag envoyés par l'API. Seules les réponses
+                # publiques (Pokémon, types, évolutions) sont gardées ; les équipes (no-cache) ne le sont pas.
+                caching:
+                    cache_pool: cache.http_client
+                    shared: true
+                    max_ttl: 3600
+
+when@test:
+    framework:
+        test: true
+        session:
+            storage_factory_id: session.storage.factory.mock_file

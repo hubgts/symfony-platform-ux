@@ -1,0 +1,13 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouvelle équipe{% endblock %}
+
+{% block body %}
+    <nav class="breadcrumb"><a href="{{ path('team_index') }}">{{ ux_icon('tabler:arrow-left') }} Équipes</a></nav>
+    <header class="page-header">
+        <h1>Nouvelle équipe</h1>
+        <p class="muted">Essaie d'ajouter Mewtwo et Mew, ou 7 Pokémon : c'est l'API qui refuse (422), et le formulaire affiche ses messages.</p>
+    </header>
+
+    <twig:TeamBuilder :with="app.request.query.getInt('with') ?: null" />
+{% endblock %}

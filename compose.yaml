@@ -1,0 +1,67 @@
+name: symfony-platform-ux
+
+x-php: &php
+  build:
+    context: ./docker/php
+    args:
+      UID: ${UID:-1000}
+      GID: ${GID:-1000}
+  image: symfony-platform-ux/php:8.5
+  restart: unless-stopped
+  tty: true
+
+# Mode worker FrankenPHP : Symfony démarre une fois et sert ensuite toutes les requêtes depuis la mémoire.
+# `watch` redémarre les workers dès qu'un fichier PHP, Twig, YAML ou .env change (confort du développement).
+# Pour revenir au mode classique : FRANKENPHP_CONFIG: ''
+x-worker: &worker |
+  worker {
+      file ./public/index.php
+      env FRANKENPHP_WORKER 1
+      watch
+  }
+
+services:
+  database:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pokedex
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: '!ChangeMe!'
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-d', 'pokedex', '-U', 'app']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - database_data:/var/lib/postgresql/data
+
+  api:
+    <<: *php
+    volumes:
+      - ./api:/app
+    environment:
+      DATABASE_URL: postgresql://app:!ChangeMe!@database:5432/pokedex?serverVersion=17&charset=utf8
+      FRANKENPHP_CONFIG: *worker
+    ports:
+      - '8180:8080'
+    depends_on:
+      database:
+        condition: service_healthy
+
+  front:
+    <<: *php
+    volumes:
+      - ./front:/app
+    environment:
+      # Appels serveur → serveur sur le réseau Docker ; l'URL publique sert aux liens affichés dans le navigateur.
+      API_BASE_URL: http://api:8080
+      API_PUBLIC_URL: http://localhost:8180
+      FRANKENPHP_CONFIG: *worker
+    ports:
+      - '8181:8080'
+    depends_on:
+      - api
+
+volumes:
+  database_data:

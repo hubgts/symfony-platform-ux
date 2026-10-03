@@ -1,0 +1,120 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ pokemon.name }}{% endblock %}
+
+{% block body %}
+    {% set mainColor = (pokemon.types|first).color %}
+    {% set previous = position.previous %}
+    {% set next = position.next %}
+
+    {# Contrôleur Stimulus maison : ← / → pour passer au Pokémon précédent / suivant #}
+    {#
+        Turbo Frame autour de la fiche : les liens de la chaîne d'évolution (data-turbo-frame="pokemon-detail")
+        ne remplacent que la fiche, sans remonter en haut de page ; data-turbo-action="advance" met à jour l'URL
+        et l'historique. Tous les autres liens (target="_top") restent des navigations complètes.
+    #}
+    <turbo-frame id="pokemon-detail" target="_top" data-turbo-action="advance">
+    <article class="pokemon-detail" style="--type-color: {{ mainColor }}"
+             data-controller="keyboard-nav"
+             data-keyboard-nav-previous-value="{{ previous ? path('pokemon_show', {id: previous.id}) }}"
+             data-keyboard-nav-next-value="{{ next ? path('pokemon_show', {id: next.id}) }}"
+             data-action="keydown@window->keyboard-nav#navigate">
+
+        <nav class="pokedex-pager" aria-label="Pokémon voisins">
+            {% if previous %}
+                <a class="pokedex-pager__link" href="{{ path('pokemon_show', {id: previous.id}) }}" rel="prev">
+                    {{ ux_icon('tabler:chevron-left') }}
+                    <img src="{{ previous.sprite }}" alt="" width="48" height="48">
+                    <span><small>#{{ '%03d'|format(previous.id) }}</small> {{ previous.name }}</span>
+                </a>
+            {% else %}<span></span>{% endif %}
+            <a class="pokedex-pager__home" href="{{ path('pokedex_index', {generations: [pokemon.generation]}) }}">{{ ux_icon('tabler:layout-grid') }} <span>Pokédex</span> <kbd>←</kbd><kbd>→</kbd></a>
+            {% if next %}
+                <a class="pokedex-pager__link pokedex-pager__link--next" href="{{ path('pokemon_show', {id: next.id}) }}" rel="next">
+                    <span><small>#{{ '%03d'|format(next.id) }}</small> {{ next.name }}</span>
+                    <img src="{{ next.sprite }}" alt="" width="48" height="48">
+                    {{ ux_icon('tabler:chevron-right') }}
+                </a>
+            {% else %}<span></span>{% endif %}
+        </nav>
+
+        <section class="card pokemon-detail__hero">
+            <div class="pokemon-detail__visual">
+                <img src="{{ pokemon.artwork }}" alt="{{ pokemon.name }}" width="320" height="320" style="view-transition-name: artwork-{{ pokemon.id }}">
+            </div>
+            <div class="pokemon-detail__info">
+                <p class="pokemon-detail__number">
+                    #{{ '%04d'|format(pokemon.id) }}
+                    · <a href="{{ path('pokedex_index', {generations: [pokemon.generation]}) }}">{{ pokemon.toGeneration.label }}</a>
+                </p>
+                <h1>{{ pokemon.name }}</h1>
+                <p class="pokemon-detail__genus">{{ pokemon.genus }}
+                    {% if pokemon.legendary %}<span class="tag">{{ ux_icon('tabler:sparkles') }} Légendaire</span>{% endif %}
+                    {% if pokemon.mythical %}<span class="tag">{{ ux_icon('tabler:sparkles') }} Fabuleux</span>{% endif %}
+                </p>
+                <p class="pokemon-card__types">
+                    {% for type in pokemon.types %}
+                        <a href="{{ path('pokedex_index', {types: [type.code]}) }}" title="Tous les Pokémon {{ type.name }}"><twig:TypeBadge :type="type" class="type-badge--large" /></a>
+                    {% endfor %}
+                </p>
+                {% if pokemon.description %}
+                    <p class="pokemon-detail__description">{{ pokemon.description }}</p>
+                {% else %}
+                    <p class="pokemon-detail__description muted">PokeAPI ne propose pas encore de description en français pour ce Pokémon.</p>
+                {% endif %}
+                <dl class="facts">
+                    <div><dt>Taille</dt><dd>{{ (pokemon.height / 10)|number_format(1, ',') }} m</dd></div>
+                    <div><dt>Poids</dt><dd>{{ (pokemon.weight / 10)|number_format(1, ',', ' ') }} kg</dd></div>
+                    <div><dt>Puissance</dt><dd>{{ pokemon.baseStatTotal }}</dd></div>
+                    <div><dt>Classement</dt><dd>{{ position.rank }}<sup>e</sup> <small>/ {{ position.total }}</small></dd></div>
+                </dl>
+                <div class="pokemon-detail__actions">
+                    {# Contrôleur Stimulus maison : assets/controllers/cry_controller.js #}
+                    <button type="button" class="button" data-controller="cry" data-cry-url-value="{{ pokemon.cryUrl }}" data-action="cry#play">
+                        {{ ux_icon('tabler:volume') }} Écouter son cri
+                    </button>
+                    <a class="button button--ghost" href="{{ path('team_new', {with: pokemon.id}) }}">{{ ux_icon('tabler:users-plus') }} Créer une équipe avec {{ pokemon.name }}</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>{{ ux_icon('tabler:git-fork') }} Évolutions</h2>
+            <twig:EvolutionChain :stages="stages" :current="pokemon" />
+        </section>
+
+        <div class="pokemon-detail__columns">
+            <section class="card">
+                <h2>{{ ux_icon('tabler:chart-radar') }} Statistiques de base</h2>
+                <div class="chart chart--radar">{{ render_chart(chart) }}</div>
+                {% for label, value in pokemon.stats %}
+                    <twig:StatBar :label="label" :value="value" :color="mainColor" />
+                {% endfor %}
+            </section>
+
+            <section class="card">
+                <h2>{{ ux_icon('tabler:shield-half') }} Défense</h2>
+                <p class="muted">Dégâts reçus selon le type de l'attaque. Clique un type pour voir ses Pokémon.</p>
+                <twig:TypeDefenses :defenses="defenses" />
+            </section>
+        </div>
+
+        <section class="card">
+            <h2>{{ ux_icon('tabler:arrows-shuffle') }} Profils de statistiques proches</h2>
+            <div class="mini-grid">
+                {% for other in similar %}<twig:PokemonMini :pokemon="other" />{% endfor %}
+            </div>
+        </section>
+
+        {% for type in pokemon.types %}
+            <section class="card">
+                <h2>Autres Pokémon de type <twig:TypeBadge :type="type" /></h2>
+                {# Turbo Frame chargé paresseusement, quand il entre dans l'écran #}
+                <twig:Turbo:Frame id="same-type-{{ type.code }}" src="{{ path('pokemon_same_type', {id: pokemon.id, code: type.code}) }}" loading="lazy">
+                    <p class="muted"><span class="spinner">{{ ux_icon('tabler:loader-2') }}</span> Chargement depuis /api/pokemon_types/{{ type.code }}/pokemon…</p>
+                </twig:Turbo:Frame>
+            </section>
+        {% endfor %}
+    </article>
+    </turbo-frame>
+{% endblock %}

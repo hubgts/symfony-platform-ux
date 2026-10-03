@@ -1,0 +1,38 @@
+{# Vue tableau du Pokédex : un clic sur un en-tête trie par cette colonne (un second clic inverse le sens). #}
+{% set columns = {id: '#', name: 'Nom', hp: 'PV', attack: 'Att.', defense: 'Déf.', specialAttack: 'Att. Spé.', specialDefense: 'Déf. Spé.', speed: 'Vit.', baseStatTotal: 'Total'} %}
+<div class="table-wrapper">
+    <table class="pokedex-table">
+        <thead>
+            <tr>
+                {% for column, label in columns %}
+                    {% if column == 'name' %}<th></th>{% endif %}
+                    <th {% if sort == column %}aria-sort="{{ direction == 'asc' ? 'ascending' : 'descending' }}"{% endif %}>
+                        <button type="button" data-action="live#action" data-live-action-param="sortBy" data-live-column-param="{{ column }}">
+                            {{ label }}
+                            {% if sort == column %}{{ ux_icon(direction == 'asc' ? 'tabler:arrow-up' : 'tabler:arrow-down') }}{% endif %}
+                        </button>
+                    </th>
+                    {% if column == 'name' %}<th>Types</th>{% endif %}
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for pokemon in results.items %}
+                <tr style="--type-color: {{ (pokemon.types|first).color }}">
+                    <td class="muted">{{ '%04d'|format(pokemon.id) }}</td>
+                    <td class="pokedex-table__sprite"><img src="{{ pokemon.sprite }}" alt="" width="48" height="48" loading="lazy"></td>
+                    <td class="pokedex-table__name">
+                        <a href="{{ path('pokemon_show', {id: pokemon.id}) }}">{{ pokemon.name }}</a>
+                        {% if pokemon.legendary or pokemon.mythical %}{{ ux_icon('tabler:sparkles', {class: 'legend-icon'}) }}{% endif %}
+                    </td>
+                    <td><span class="pokemon-card__types">{% for type in pokemon.types %}<twig:TypeBadge :type="type" />{% endfor %}</span></td>
+                    {% for stat in ['hp', 'attack', 'defense', 'specialAttack', 'specialDefense', 'speed'] %}
+                        {% set value = attribute(pokemon, stat) %}
+                        <td class="stat-cell {{ sort == stat ? 'is-sorted' }}" style="--v: {{ min(100, value / 180 * 100) }}%">{{ value }}</td>
+                    {% endfor %}
+                    <td class="stat-cell stat-cell--total {{ sort == 'baseStatTotal' ? 'is-sorted' }}">{{ pokemon.baseStatTotal }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

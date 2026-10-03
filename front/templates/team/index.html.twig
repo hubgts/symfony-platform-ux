@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Équipes{% endblock %}
+
+{% block body %}
+    <header class="page-header page-header--split">
+        <div>
+            <h1>Équipes</h1>
+            <p class="muted">Renommage en ligne (Live Component + <code>PATCH</code>), suppression par Turbo Stream (<code>DELETE</code>).</p>
+        </div>
+        <a class="button" href="{{ path('team_new') }}">{{ ux_icon('tabler:plus') }} Nouvelle équipe</a>
+    </header>
+
+    <div class="team-grid">
+        {% for team in teams %}
+            <div id="team-{{ team.id }}">
+                <twig:TeamCard :team="team" />
+            </div>
+        {% else %}
+            <p class="empty">Aucune équipe pour l'instant.</p>
+        {% endfor %}
+    </div>
+{% endblock %}

@@ -1,0 +1,31 @@
+<div {{ attributes.defaults({class: 'team-builder'}) }}>
+    {# ComponentWithFormTrait : chaque champ est lié au composant, la validation se fait à la volée. #}
+    {{ form_start(form, {attr: {'data-action': 'live#action:prevent', 'data-live-action-param': 'save', novalidate: true, class: 'card form'}}) }}
+        {{ form_errors(form) }}
+        {{ form_row(form.name) }}
+        {{ form_row(form.trainer) }}
+        {{ form_row(form.members) }}
+        <button type="submit" class="button" data-loading="addAttribute(disabled)">
+            {{ ux_icon('tabler:device-floppy') }} Créer l'équipe
+            <span class="spinner" data-loading="action(save)|show">{{ ux_icon('tabler:loader-2') }}</span>
+        </button>
+    {{ form_end(form) }}
+
+    {% set preview = this.preview %}
+    <aside class="card team-preview">
+        <h2>Aperçu</h2>
+        <ul class="team-members">
+            {% for pokemon in preview %}
+                <li style="--type-color: {{ (pokemon.types|first).color }}">
+                    <img src="{{ pokemon.sprite }}" alt="" width="72" height="72">
+                    <span>{{ pokemon.name }}{% if pokemon.legendary or pokemon.mythical %} {{ ux_icon('tabler:sparkles') }}{% endif %}</span>
+                </li>
+            {% endfor %}
+            {% if preview|length < 6 %}{% for i in range(preview|length, 5) %}
+                <li class="team-members__slot">{{ ux_icon('tabler:pokeball') }}</li>
+            {% endfor %}{% endif %}
+        </ul>
+        <p class="team-preview__power">{{ ux_icon('tabler:bolt') }} Puissance : <strong>{{ preview|reduce((sum, p) => sum + p.baseStatTotal, 0) }}</strong></p>
+        <p class="muted">L'aperçu est recalculé par le serveur à chaque modification (Live Component), sans écrire une ligne de JavaScript.</p>
+    </aside>
+</div>

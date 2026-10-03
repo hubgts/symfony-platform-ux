@@ -1,0 +1,3 @@
+{# Composant Twig anonyme : <twig:TypeBadge :type="type" /> #}
+{% props type %}
+<span {{ attributes.defaults({class: 'type-badge'}) }} style="--type-color: {{ type.color }}">{{ type.name }}</span>

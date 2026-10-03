@@ -1,0 +1,6 @@
+{% props label, value, max = 180, color = '#888' %}
+<div {{ attributes.defaults({class: 'stat-bar'}) }}>
+    <span class="stat-bar__label">{{ label }}</span>
+    <span class="stat-bar__value">{{ value }}</span>
+    <span class="stat-bar__track"><span class="stat-bar__fill" style="width: {{ min(100, value / max * 100) }}%; background: {{ color }}"></span></span>
+</div>

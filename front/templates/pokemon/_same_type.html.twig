@@ -1,0 +1,13 @@
+{# Réponse d'un Turbo Frame : seul le <turbo-frame> de même id est extrait et injecté dans la page. #}
+<twig:Turbo:Frame id="same-type-{{ code }}" target="_top">
+    <div class="mini-grid">
+        {% for other in pokemon %}
+            <twig:PokemonMini :pokemon="other" />
+        {% else %}
+            <p class="muted">Aucun autre Pokémon de ce type.</p>
+        {% endfor %}
+    </div>
+    {% if total > pokemon|length %}
+        <p class="see-all"><a href="{{ path('pokedex_index', {types: [code]}) }}">Voir les {{ total }} Pokémon dans le Pokédex {{ ux_icon('tabler:arrow-right') }}</a></p>
+    {% endif %}
+</twig:Turbo:Frame>

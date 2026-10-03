@@ -1,0 +1,64 @@
+{% set teamTypes = [] %}
+{% for pokemon in team.members %}
+    {% for type in pokemon.types %}
+        {% if type.code not in teamTypes|map(t => t.code) %}{% set teamTypes = teamTypes|merge([type]) %}{% endif %}
+    {% endfor %}
+{% endfor %}
+
+<article {{ attributes.defaults({class: 'card team-card'}) }} style="--team-color: {{ (teamTypes|first).color ?? 'var(--accent)' }}">
+    <header class="team-card__header">
+        <span class="team-card__avatar" aria-hidden="true">{{ team.trainer|first|upper }}</span>
+        <div class="team-card__title">
+            {% if editing %}
+                <form class="rename-form" data-action="live#action:prevent" data-live-action-param="rename">
+                    <input type="text" data-model="norender|name" aria-label="Nouveau nom" autofocus>
+                    <button type="submit" class="icon-button" title="Enregistrer (PATCH)">{{ ux_icon('tabler:check') }}</button>
+                    <button type="button" class="icon-button" data-action="live#action" data-live-action-param="cancel" title="Annuler">{{ ux_icon('tabler:x') }}</button>
+                </form>
+                {% if error %}<p class="field-error">{{ error }}</p>{% endif %}
+            {% else %}
+                <h2>{{ team.name }}</h2>
+            {% endif %}
+            <p class="muted">{{ team.trainer }} · {{ team.createdAt|date('d/m/Y') }}</p>
+        </div>
+        {% if not editing %}
+            <div class="team-card__actions">
+                <button type="button" class="icon-button" data-action="live#action" data-live-action-param="edit" title="Renommer">{{ ux_icon('tabler:pencil') }}</button>
+                <form method="post" action="{{ path('team_delete', {id: team.id}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete-team-' ~ team.id) }}">
+                    <button type="submit" class="icon-button icon-button--danger" title="Supprimer (DELETE)">{{ ux_icon('tabler:trash') }}</button>
+                </form>
+            </div>
+        {% endif %}
+    </header>
+
+    <ul class="team-slots">
+        {% for pokemon in team.members %}
+            <li style="--type-color: {{ (pokemon.types|first).color }}">
+                <a href="{{ path('pokemon_show', {id: pokemon.id}) }}">
+                    <img src="{{ pokemon.artwork }}" alt="" width="72" height="72" loading="lazy">
+                    <span class="team-slots__name">{{ pokemon.name }}</span>
+                    <span class="team-slots__dots">
+                        {% for type in pokemon.types %}<i style="background: {{ type.color }}" title="{{ type.name }}"></i>{% endfor %}
+                    </span>
+                </a>
+            </li>
+        {% endfor %}
+        {% if team.members|length < 6 %}{% for i in range(team.members|length, 5) %}
+            <li class="team-slots__empty" title="Emplacement libre">{{ ux_icon('tabler:pokeball') }}</li>
+        {% endfor %}{% endif %}
+    </ul>
+
+    {# Les types se placent sous les Pokémon : le pied de carte (puissance) reste aligné d'une carte à l'autre. #}
+    <p class="team-card__types">
+        {% for type in teamTypes %}<twig:TypeBadge :type="type" />{% endfor %}
+    </p>
+
+    <footer class="team-card__footer">
+        <div class="team-card__power">
+            <span>{{ ux_icon('tabler:bolt') }} Puissance <strong>{{ team.power }}</strong></span>
+            <span class="muted">{{ team.members|length }}/6</span>
+        </div>
+        <div class="power-bar"><span style="width: {{ min(100, team.power / 3600 * 100) }}%"></span></div>
+    </footer>
+</article>

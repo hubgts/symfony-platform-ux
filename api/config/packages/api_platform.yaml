@@ -1,0 +1,33 @@
+api_platform:
+    title: Pokédex API
+    description: |
+        Démo **API Platform 5** : ressources DTO séparées des entités (Symfony ObjectMapper),
+        nouveaux filtres paramétriques, méthode HTTP `QUERY`, JSON-LD/Hydra + JSON:API, OpenAPI 3.2.
+        Données importées depuis PokeAPI (https://pokeapi.co).
+    version: 1.0.0
+    # Les ressources vivent dans src/ApiResource, les entités Doctrine dans src/Entity : on ne scanne que les ressources.
+    mapping:
+        paths: ['%kernel.project_dir%/src/ApiResource']
+    formats:
+        jsonld: ['application/ld+json']
+        jsonapi: ['application/vnd.api+json']
+        json: ['application/json']
+    patch_formats:
+        json: ['application/merge-patch+json']
+    docs_formats:
+        jsonopenapi: ['application/vnd.openapi+json']
+        yamlopenapi: ['application/vnd.openapi+yaml']
+        jsonld: ['application/ld+json']
+        html: ['text/html']
+    # Scalar API Reference est disponible à côté de Swagger UI et ReDoc : /api/docs?ui=scalar
+    enable_scalar: true
+    # Défaut 5.0 rappelé explicitement : en JSON:API, data.id = identifiant et l'IRI passe dans data.links.self.
+    jsonapi:
+        use_iri_as_id: false
+    defaults:
+        stateless: true
+        pagination_items_per_page: 24
+        pagination_client_items_per_page: true
+        pagination_maximum_items_per_page: 200
+        cache_headers:
+            vary: ['Content-Type', 'Authorization', 'Origin']

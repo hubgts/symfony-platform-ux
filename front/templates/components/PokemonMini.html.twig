@@ -1,0 +1,11 @@
+{# Vignette cliquable d'un Pokémon : <twig:PokemonMini :pokemon="pokemon" /> #}
+{% props pokemon, current = false %}
+<a href="{{ path('pokemon_show', {id: pokemon.id}) }}"
+   {{ attributes.defaults({class: 'pokemon-mini' ~ (current ? ' is-current')}) }}
+   style="--type-color: {{ (pokemon.types|first).color }}"
+   {% if current %}aria-current="page"{% endif %}>
+    <img src="{{ pokemon.artwork }}" alt="" width="88" height="88" loading="lazy">
+    <span class="pokemon-mini__number">#{{ '%03d'|format(pokemon.id) }}</span>
+    <strong>{{ pokemon.name }}</strong>
+    <span class="pokemon-mini__dots">{% for type in pokemon.types %}<i style="background: {{ type.color }}" title="{{ type.name }}"></i>{% endfor %}</span>
+</a>

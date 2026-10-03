@@ -1,0 +1,14 @@
+{# Composant Twig anonyme : <twig:PokemonCard :pokemon="pokemon" /> #}
+{% props pokemon %}
+<a href="{{ path('pokemon_show', {id: pokemon.id}) }}" {{ attributes.defaults({class: 'pokemon-card'}) }} style="--type-color: {{ (pokemon.types|first).color }}">
+    <span class="pokemon-card__number">#{{ '%03d'|format(pokemon.id) }}</span>
+    {% if pokemon.legendary or pokemon.mythical %}
+        <span class="pokemon-card__legend" title="{{ pokemon.mythical ? 'Fabuleux' : 'Légendaire' }}">{{ ux_icon('tabler:sparkles') }}</span>
+    {% endif %}
+    <img src="{{ pokemon.artwork }}" alt="" loading="lazy" width="140" height="140" style="view-transition-name: artwork-{{ pokemon.id }}">
+    <strong class="pokemon-card__name">{{ pokemon.name }}</strong>
+    <span class="pokemon-card__types">
+        {% for type in pokemon.types %}<twig:TypeBadge :type="type" />{% endfor %}
+    </span>
+    <span class="pokemon-card__power" title="Puissance totale (somme des stats)">{{ ux_icon('tabler:bolt') }} {{ pokemon.baseStatTotal }}</span>
+</a>

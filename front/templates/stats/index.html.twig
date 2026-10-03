@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Statistiques{% endblock %}
+
+{% block body %}
+    <header class="page-header">
+        <h1>Statistiques</h1>
+        <p class="muted">Graphiques Symfony UX Chart.js construits en PHP à partir de l'API.</p>
+    </header>
+
+    <section class="kpis">
+        <div class="card kpi"><span>Pokémon</span><strong>{{ count }}</strong></div>
+        <div class="card kpi"><span>Légendaires et fabuleux</span><strong>{{ legendaries }}</strong></div>
+        <div class="card kpi"><span>Puissance moyenne</span><strong>{{ average }}</strong></div>
+    </section>
+
+    <div class="charts">
+        <section class="card"><h2>Pokémon par génération</h2>{{ render_chart(byGeneration) }}</section>
+        <section class="card"><h2>Pokémon par type</h2>{{ render_chart(byType) }}</section>
+        <section class="card"><h2>Les 10 plus puissants</h2>{{ render_chart(strongest) }}</section>
+        <section class="card"><h2>Les 10 moins puissants</h2>{{ render_chart(weakest) }}</section>
+    </div>
+{% endblock %}

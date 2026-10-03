@@ -1,0 +1,162 @@
+{% set SEARCH = 'App\\Twig\\Components\\PokedexSearch' %}
+<div {{ attributes.defaults({class: 'pokedex'}) }}>
+    {# ---------- Panneau de filtres : chaque champ est lié à une LiveProp (data-model) ---------- #}
+    <details class="filters-panel card" open data-controller="collapse-on-mobile">
+        <summary>{{ ux_icon('tabler:adjustments-horizontal') }} Filtres
+            {% if this.activeFilters|length %}<span class="count-badge">{{ this.activeFilters|length }}</span>{% endif %}
+        </summary>
+
+        <label class="search-field">
+            {{ ux_icon('tabler:search') }}
+            <input type="search" data-model="debounce(300)|q" placeholder="Nom ou espèce : « dra », « souris »…" aria-label="Recherche">
+        </label>
+
+        <fieldset class="filter-group">
+            <legend>Types</legend>
+            <div class="segmented" role="radiogroup" aria-label="Combinaison des types">
+                <label><input type="radio" name="typeMode" value="any" data-model="typeMode"> Au moins un</label>
+                <label><input type="radio" name="typeMode" value="all" data-model="typeMode"> Tous (double type)</label>
+            </div>
+            <div class="chips">
+                {% for type in this.typeOptions %}
+                    <label class="chip {{ type.code in types ? 'is-active' }}" style="--type-color: {{ type.color }}">
+                        <input type="checkbox" value="{{ type.code }}" data-model="types"> {{ type.name }}
+                    </label>
+                {% endfor %}
+            </div>
+        </fieldset>
+
+        <fieldset class="filter-group">
+            <legend>Générations</legend>
+            <div class="chips">
+                {% for generation in enum_cases('App\\Api\\Model\\Generation') %}
+                    <label class="chip chip--generation {{ generation.value in generations|map(g => g + 0) ? 'is-active' }}" title="{{ generation.label }}">
+                        <input type="checkbox" value="{{ generation.value }}" data-model="generations"> {{ generation.toRoman }} <small>{{ generation.name }}</small>
+                    </label>
+                {% endfor %}
+            </div>
+        </fieldset>
+
+        <fieldset class="filter-group">
+            <legend>Catégorie</legend>
+            <div class="chips">
+                <label class="chip {{ category is empty ? 'is-active' }}"><input type="radio" name="category" value="" data-model="category"> Toutes</label>
+                {% for key, label in constant(SEARCH ~ '::CATEGORIES') %}
+                    <label class="chip {{ category == key ? 'is-active' }}"><input type="radio" name="category" value="{{ key }}" data-model="category"> {{ label }}</label>
+                {% endfor %}
+            </div>
+        </fieldset>
+
+        <fieldset class="filter-group">
+            <legend>Évolution</legend>
+            <select data-model="stage" aria-label="Stade d'évolution">
+                <option value="">Tous les stades</option>
+                {% for key, label in constant(SEARCH ~ '::STAGES') %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+            </select>
+        </fieldset>
+
+        <fieldset class="filter-group">
+            <legend>Statistiques minimales</legend>
+            {% for stat, label in constant(SEARCH ~ '::STATS') %}
+                {% set value = attribute(this, stat) %}
+                {# Contrôleur Stimulus maison : affiche la valeur pendant le glissement, avant le rendu Live #}
+                <label class="range-field" data-controller="range-value">
+                    <span>{{ label }}</span>
+                    <output data-range-value-target="output">{{ value ?: '—' }}</output>
+                    <input type="range" min="0" max="200" step="5" data-model="debounce(350)|{{ stat }}" data-action="input->range-value#update">
+                </label>
+            {% endfor %}
+            <div class="select-field">
+                <span>Puissance</span>
+                <select data-model="minTotal" aria-label="Puissance minimale">
+                    {% for v in [0, 300, 400, 500, 600] %}<option value="{{ v }}">{{ v ?: 'min' }}</option>{% endfor %}
+                </select>
+                <span>à</span>
+                <select data-model="maxTotal" aria-label="Puissance maximale">
+                    {% for v in [0, 400, 500, 600, 700] %}<option value="{{ v }}">{{ v ?: 'max' }}</option>{% endfor %}
+                </select>
+            </div>
+        </fieldset>
+
+        {% if this.activeFilters|length %}
+            <button type="button" class="button button--ghost button--block" data-action="live#action" data-live-action-param="clearFilters">
+                {{ ux_icon('tabler:filter-off') }} Tout réinitialiser
+            </button>
+        {% endif %}
+    </details>
+
+    {# ---------- Résultats ---------- #}
+    {# `computed` met le résultat en cache le temps du rendu : un seul appel à l'API par rendu. #}
+    {% set results = computed.results %}
+    <section class="results">
+        <div class="toolbar">
+            <p class="toolbar__count"><strong>{{ results.totalItems }}</strong> Pokémon
+                <span class="spinner" data-loading>{{ ux_icon('tabler:loader-2') }}</span>
+            </p>
+            <div class="toolbar__controls">
+                <label class="select-field">
+                    <span>Trier par</span>
+                    <select data-model="sort">
+                        {% for key, sort in constant(SEARCH ~ '::SORTS') %}<option value="{{ key }}">{{ sort[0] }}</option>{% endfor %}
+                    </select>
+                </label>
+                <button type="button" class="icon-button icon-button--bordered" data-action="live#action" data-live-action-param="toggleDirection"
+                        title="{{ direction == 'asc' ? 'Croissant' : 'Décroissant' }} (cliquer pour inverser)">
+                    {{ ux_icon(direction == 'asc' ? 'tabler:sort-ascending' : 'tabler:sort-descending') }}
+                </button>
+                <select data-model="perPage" aria-label="Résultats par page">
+                    {% for n in constant(SEARCH ~ '::PER_PAGE') %}<option value="{{ n }}">{{ n }} / page</option>{% endfor %}
+                </select>
+                <div class="segmented segmented--icons" role="radiogroup" aria-label="Affichage">
+                    <label title="Grille"><input type="radio" name="view" value="grid" data-model="view">{{ ux_icon('tabler:layout-grid') }}</label>
+                    <label title="Tableau"><input type="radio" name="view" value="table" data-model="view">{{ ux_icon('tabler:table') }}</label>
+                </div>
+            </div>
+        </div>
+
+        {% if this.activeFilters|length %}
+            <ul class="active-filters" aria-label="Filtres actifs">
+                {% for pill in this.activeFilters %}
+                    <li>
+                        <button type="button" class="pill" {% if pill.color %}style="--type-color: {{ pill.color }}"{% endif %}
+                                data-action="live#action" data-live-action-param="removeFilter"
+                                data-live-filter-param="{{ pill.filter }}" data-live-value-param="{{ pill.value }}" title="Retirer ce filtre">
+                            {{ pill.label }} {{ ux_icon('tabler:x') }}
+                        </button>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <details class="api-request">
+            <summary>{{ ux_icon('tabler:code') }} Requête envoyée à l'API</summary>
+            <pre>{{ results.request }}</pre>
+        </details>
+
+        <div data-loading="addClass(is-loading)" class="results__body">
+            {% if results.items is empty %}
+                <p class="empty">Aucun Pokémon ne correspond à ces critères.</p>
+            {% elseif view == 'table' %}
+                {% include 'components/_pokedex_table.html.twig' %}
+            {% else %}
+                <div class="pokemon-grid">
+                    {% for pokemon in results.items %}<twig:PokemonCard :pokemon="pokemon" />{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        {% if results.lastPage > 1 %}
+            <nav class="pagination" aria-label="Pagination">
+                <button type="button" class="button button--ghost" {{ results.page <= 1 ? 'disabled' }}
+                        data-action="live#action" data-live-action-param="goToPage" data-live-page-param="{{ results.page - 1 }}">
+                    {{ ux_icon('tabler:chevron-left') }} Précédent
+                </button>
+                <span>Page {{ results.page }} / {{ results.lastPage }}</span>
+                <button type="button" class="button button--ghost" {{ results.page >= results.lastPage ? 'disabled' }}
+                        data-action="live#action" data-live-action-param="goToPage" data-live-page-param="{{ results.page + 1 }}">
+                    Suivant {{ ux_icon('tabler:chevron-right') }}
+                </button>
+            </nav>
+        {% endif %}
+    </section>
+</div>

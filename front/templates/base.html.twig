@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{% block title %}Pokédex{% endblock %} · Symfony UX × API Platform 5</title>
+        {# Turbo 8 : transitions animées entre les pages (View Transitions API) #}
+        <meta name="view-transition" content="same-origin">
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2246%22 fill=%22%23ef4444%22/><rect x=%224%22 y=%2246%22 width=%2292%22 height=%228%22 fill=%22%23111%22/><path d=%22M4 54a46 46 0 0 0 92 0z%22 fill=%22%23fff%22/><circle cx=%2250%22 cy=%2250%22 r=%2214%22 fill=%22%23fff%22 stroke=%22%23111%22 stroke-width=%228%22/></svg>">
+        {% block stylesheets %}{% endblock %}
+        {% block javascripts %}
+            {% block importmap %}{{ importmap('app') }}{% endblock %}
+        {% endblock %}
+    </head>
+    <body>
+        <header class="topbar">
+            <a class="brand" href="{{ path('pokedex_index') }}">
+                {{ ux_icon('tabler:pokeball', {class: 'brand__logo'}) }}
+                <span>Pokédex <small>Symfony UX × API Platform 5</small></span>
+            </a>
+            {% set route = app.current_route %}
+            <nav class="nav">
+                <a href="{{ path('pokedex_index') }}" class="{{ route starts with 'pokedex' or route starts with 'pokemon' ? 'is-active' }}">{{ ux_icon('tabler:layout-grid') }} Pokédex</a>
+                <a href="{{ path('team_index') }}" class="{{ route starts with 'team' ? 'is-active' }}">{{ ux_icon('tabler:users-group') }} Équipes</a>
+                <a href="{{ path('stats') }}" class="{{ route == 'stats' ? 'is-active' }}">{{ ux_icon('tabler:chart-bar') }} Statistiques</a>
+                <a href="{{ api_public_url }}/api/docs?ui=scalar" target="_blank" rel="noopener">{{ ux_icon('tabler:api') }} API</a>
+            </nav>
+        </header>
+
+        <main class="container">
+            {% for type, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="flash flash--{{ type }}" data-controller="dismiss" data-dismiss-delay-value="5000">
+                        {{ ux_icon('tabler:circle-check') }} {{ message }}
+                        <button type="button" class="icon-button" data-action="dismiss#close" aria-label="Fermer">{{ ux_icon('tabler:x') }}</button>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+
+            {% block body %}{% endblock %}
+        </main>
+
+        <footer class="footer">
+            Données <a href="https://pokeapi.co" target="_blank" rel="noopener">PokeAPI</a> ·
+            API <a href="{{ api_public_url }}/api" target="_blank" rel="noopener">{{ api_public_url }}/api</a>
+        </footer>
+    </body>
+</html>

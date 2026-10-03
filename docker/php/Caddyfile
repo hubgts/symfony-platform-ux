@@ -1,0 +1,17 @@
+{
+	skip_install_trust
+	{$CADDY_GLOBAL_OPTIONS}
+	frankenphp {
+		# Mode worker (FRANKENPHP_CONFIG, voir compose.yaml) : le noyau Symfony reste en mémoire entre les requêtes.
+		{$FRANKENPHP_CONFIG}
+	}
+}
+
+{$SERVER_NAME::8080} {
+	root /app/public
+	encode zstd br gzip
+
+	{$CADDY_SERVER_EXTRA_DIRECTIVES}
+
+	php_server
+}
